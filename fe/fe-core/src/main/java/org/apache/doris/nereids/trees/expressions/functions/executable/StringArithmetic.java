@@ -17,27 +17,11 @@
 
 package org.apache.doris.nereids.trees.expressions.functions.executable;
 
+import com.google.common.base.Splitter;
 import org.apache.doris.nereids.exceptions.AnalysisException;
 import org.apache.doris.nereids.trees.expressions.ExecFunction;
 import org.apache.doris.nereids.trees.expressions.Expression;
-import org.apache.doris.nereids.trees.expressions.literal.ArrayLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.BigIntLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.BooleanLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.DateTimeLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.DateTimeV2Literal;
-import org.apache.doris.nereids.trees.expressions.literal.DecimalLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.DecimalV3Literal;
-import org.apache.doris.nereids.trees.expressions.literal.DoubleLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.FloatLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.IntegerLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.LargeIntLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.Literal;
-import org.apache.doris.nereids.trees.expressions.literal.NullLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.SmallIntLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.StringLikeLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.StringLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.TinyIntLiteral;
-import org.apache.doris.nereids.trees.expressions.literal.VarcharLiteral;
+import org.apache.doris.nereids.trees.expressions.literal.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -50,6 +34,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * executable functions:
@@ -869,4 +855,17 @@ public class StringArithmetic {
         return castStringLikeLiteral(first, first.getValue().replace(second.getValue(), third.getValue()));
     }
 
+    /**
+     * Executable arithmetic functions replaceEmpty
+     */
+    @ExecFunction(name = "str_to_map")
+    public static Expression strToMap(StringLikeLiteral first, StringLikeLiteral second, StringLikeLiteral third) {
+
+        Map<String, String> datas = Splitter.on(second.getValue())
+            .withKeyValueSeparator(third.getValue())
+            .split(first.getValue());
+        List<Literal> keys = datas.keySet().stream().map(e->StringLiteral.of(e)).collect(Collectors.toList());
+        List<Literal> values =  datas.values().stream().map(e->StringLiteral.of(e)).collect(Collectors.toList());
+        return new MapLiteral(keys,values);
+    }
 }
